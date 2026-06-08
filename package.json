@@ -1,0 +1,23 @@
+{
+	"name": "enterprise-platform",
+	"private": true,
+	"packageManager": "pnpm@9.15.0",
+	"engines": {
+		"node": ">=20"
+	},
+	"scripts": {
+		"lint": "turbo lint",
+		"format": "prettier -w .",
+		"typecheck": "turbo typecheck",
+		"test": "turbo test",
+		"dev": "turbo dev",
+		"build": "turbo build",
+		"db:migrate": "pnpm --filter @platform/db prisma migrate dev",
+		"db:generate": "pnpm --filter @platform/db prisma generate"
+	},
+	"devDependencies": {
+		"prettier": "^3.3.3",
+		"turbo": "^2.1.3",
+		"typescript": "^5.6.3"
+	}
+}

@@ -1,0 +1,160 @@
+generator client {
+	provider = "prisma-client-js"
+}
+
+datasource db {
+	provider = "postgresql"
+	url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+	ACTIVE
+	SUSPENDED
+}
+
+enum RoleScope {
+	ORG
+	BRANCH
+	PLATFORM
+}
+
+model Organisation {
+	id        String   @id @default(cuid())
+	name      String
+	slug      String   @unique
+	currency  String   @default("UZS")
+	locale    String   @default("uz")
+	timezone  String   @default("Asia/Tashkent")
+	isActive  Boolean  @default(true)
+	createdAt DateTime @default(now())
+
+	branches  Branch[]
+	users     User[]
+}
+
+model Branch {
+	id             String   @id @default(cuid())
+	organisationId String
+	name           String
+	address        String?
+	phone          String?
+	isActive       Boolean  @default(true)
+	createdAt      DateTime @default(now())
+
+	organisation Organisation @relation(fields: [organisationId], references: [id])
+}
+
+model User {
+	id             String     @id @default(cuid())
+	organisationId String
+	email          String     @unique
+	passwordHash   String
+	status         UserStatus @default(ACTIVE)
+	createdAt      DateTime   @default(now())
+
+	organisation Organisation @relation(fields: [organisationId], references: [id])
+	userRoles     UserRole[]
+	refreshTokens RefreshToken[]
+	mfaSecrets    MfaSecret[]
+}
+
+model Role {
+	id             String    @id @default(cuid())
+	organisationId String?
+	name           String
+	scope          RoleScope
+	createdAt      DateTime  @default(now())
+
+	permissions RolePermission[]
+	userRoles   UserRole[]
+
+	@@unique([organisationId, name, scope])
+}
+
+model Permission {
+	id        String   @id @default(cuid())
+	key       String   @unique
+	createdAt DateTime @default(now())
+
+	roles RolePermission[]
+}
+
+model RolePermission {
+	roleId       String
+	permissionId String
+	createdAt    DateTime @default(now())
+
+	role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+	permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+	@@id([roleId, permissionId])
+}
+
+model UserRole {
+	userId   String
+	roleId   String
+	branchId String?
+	createdAt DateTime @default(now())
+
+	user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+	role   Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+	@@id([userId, roleId, branchId])
+}
+
+model RefreshToken {
+	id             String   @id @default(cuid())
+	userId         String
+	hash           String
+	expiresAt      DateTime
+	createdAt      DateTime @default(now())
+	revokedAt      DateTime?
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@index([userId])
+	@@index([expiresAt])
+}
+
+model MfaSecret {
+	id             String   @id @default(cuid())
+	userId         String
+	secretEncrypted String
+	createdAt      DateTime @default(now())
+	disabledAt     DateTime?
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+	id             String   @id @default(cuid())
+	organisationId String
+	branchId       String?
+	actorUserId    String?
+	action         String
+	entityType     String
+	entityId       String
+	ip             String?
+	userAgent      String?
+	requestId      String?
+	createdAt      DateTime @default(now())
+	data           Json
+
+	@@index([organisationId, createdAt])
+	@@index([entityType, entityId])
+}
+
+model OutboxEvent {
+	id             String   @id @default(cuid())
+	organisationId String
+	eventName      String
+	payload        Json
+	createdAt      DateTime @default(now())
+	processedAt    DateTime?
+	failedAt       DateTime?
+	attempts       Int      @default(0)
+	lastError      String?
+
+	@@index([processedAt])
+	@@index([failedAt])
+}
