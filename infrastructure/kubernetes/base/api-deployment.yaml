@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+	name: platform-api
+	namespace: platform
+spec:
+	replicas: 2
+	selector:
+		matchLabels:
+			app: platform-api
+	template:
+		metadata:
+			labels:
+				app: platform-api
+		spec:
+			containers:
+				- name: api
+					image: platform/api:latest
+					ports:
+						- containerPort: 3000
+					env:
+						- name: NODE_ENV
+							value: "production"
+					readinessProbe:
+						httpGet:
+							path: /api/v1/health
+							port: 3000
+					initialDelaySeconds: 10
+					periodSeconds: 10
+					resources:
+						requests:
+							cpu: "200m"
+							memory: "256Mi"
+						limits:
+							cpu: "1"
+							memory: "512Mi"
+					securityContext:
+						allowPrivilegeEscalation: false
+						readOnlyRootFilesystem: true
+						runAsNonRoot: true
