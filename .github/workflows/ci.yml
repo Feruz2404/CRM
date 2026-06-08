@@ -2,7 +2,7 @@ name: CI
 
 on:
 	push:
-		branches: ["main", "phase0-foundation"]
+		branches: ["main"]
 	pull_request:
 
 jobs:
@@ -16,8 +16,9 @@ jobs:
 			- uses: actions/setup-node@v4
 				with:
 					node-version: 20
-					cache: "pnpm"
-			- run: pnpm install --frozen-lockfile=false
+					cache: pnpm
+			- run: pnpm install
+			- run: pnpm format --check
 			- run: pnpm lint
 			- run: pnpm typecheck
 			- run: pnpm test

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+	name: platform-worker
+	namespace: platform
+spec:
+	replicas: 1
+	selector:
+		matchLabels:
+			app: platform-worker
+	template:
+		metadata:
+			labels:
+				app: platform-worker
+		spec:
+			containers:
+				- name: worker
+					image: platform/worker:latest
+					env:
+						- name: NODE_ENV
+							value: "production"
+					resources:
+						requests:
+							cpu: "100m"
+							memory: "256Mi"
+						limits:
+							cpu: "1"
+							memory: "512Mi"
+					securityContext:
+						allowPrivilegeEscalation: false
+						readOnlyRootFilesystem: true
+						runAsNonRoot: true
